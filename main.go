@@ -4,26 +4,18 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 	"os"
+	"time"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/policy"
 	azidentity "github.com/Azure/azure-sdk-for-go/sdk/azidentity"
 	azcache "github.com/Azure/azure-sdk-for-go/sdk/azidentity/cache"
+	"github.com/gopxl/beep/mp3"
+	"github.com/gopxl/beep/speaker"
 	"github.com/joho/godotenv"
 )
-
-type drive struct {
-	client_id     string
-	client_secret string
-	tenant_id     string
-	object_id     string
-	redirect_url  string
-}
-
-type config struct {
-	drive drive
-}
 
 // https://pkg.go.dev/github.com/Azure/azure-sdk-for-go/sdk/azidentity@v1.8.2
 
@@ -99,8 +91,10 @@ func main() {
 		return
 	}
 
-	filePath := "/Music/Video Games/Darren Korb/Songs of Supergiant Games/10 Remember the Bastion.mp3"
-	endpoint := fmt.Sprintf("drive/root:%s:/children", filePath)
+	// filePath := "/Music/Video Games/Darren Korb/Songs of Supergiant Games/10 Remember the Bastion.mp3"
+	// endpoint := fmt.Sprintf("drive/root:%s:/children", filePath)
+	itemId := "F12027F22382A4D!505343"
+	endpoint := fmt.Sprintf("drive/items/%s/content", itemId)
 	baseurl := "https://graph.microsoft.com/v1.0/me"
 	url := fmt.Sprintf("%s/%s", baseurl, endpoint)
 
@@ -119,4 +113,15 @@ func main() {
 	}
 	fmt.Printf("Response: %d\n", response.StatusCode)
 
+	fmt.Printf("Content Length: %d\n", response.ContentLength)
+
+	streamer, format, err := mp3.Decode(response.Body)
+	if err != nil {
+		log.Fatal("couldn't decode file")
+	}
+	defer streamer.Close()
+
+	speaker.Init(format.SampleRate, format.SampleRate.N(time.Second/10))
+	speaker.Play(streamer)
+	select {}
 }
