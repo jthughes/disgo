@@ -2,14 +2,15 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"net/http"
 	"os"
 
+	"github.com/Azure/azure-sdk-for-go/sdk/azcore/policy"
 	azidentity "github.com/Azure/azure-sdk-for-go/sdk/azidentity"
 	azcache "github.com/Azure/azure-sdk-for-go/sdk/azidentity/cache"
 	"github.com/joho/godotenv"
-	graph "github.com/microsoftgraph/msgraph-sdk-go"
-	"github.com/microsoftgraph/msgraph-sdk-go/models/odataerrors"
 )
 
 type drive struct {
@@ -24,80 +25,98 @@ type config struct {
 	drive drive
 }
 
+// https://pkg.go.dev/github.com/Azure/azure-sdk-for-go/sdk/azidentity@v1.8.2
+
+// this example shows file storage but any form of byte storage would work
+func retrieveRecord() (azidentity.AuthenticationRecord, error) {
+	record := azidentity.AuthenticationRecord{}
+	b, err := os.ReadFile("./entra.record.json")
+	if err == nil {
+		err = json.Unmarshal(b, &record)
+	}
+	return record, err
+}
+
+func storeRecord(record azidentity.AuthenticationRecord) error {
+	b, err := json.Marshal(record)
+	if err == nil {
+		err = os.WriteFile("./entra.record.json", b, 0600)
+	}
+	return err
+}
+
 func main() {
 	godotenv.Load()
-	cfg := config{
-		drive: drive{
-			client_id:     os.Getenv("DRIVE_CLIENT_ID"),
-			client_secret: os.Getenv("DRIVE_CLIENT_SECRET"),
-			tenant_id:     os.Getenv("DRIVE_TENANT_ID"),
-			object_id:     os.Getenv("DRIVE_OBJECT_ID"),
-			redirect_url:  os.Getenv("DRIVE_REDIRECT_URL"),
-		},
-	}
 
 	record, err := retrieveRecord()
 	if err != nil {
 		//
+		fmt.Println("unable to retrieve record")
+		// return
 	}
 	c, err := azcache.New(nil)
 	if err != nil {
 		// Persistent Cache impossible
+		fmt.Println("persistent cache impossible")
+		return
 	}
 
 	cred, err := azidentity.NewInteractiveBrowserCredential(&azidentity.InteractiveBrowserCredentialOptions{
 		AuthenticationRecord: record,
+		ClientID:             os.Getenv("DRIVE_CLIENT_ID"),
+		TenantID:             os.Getenv("DRIVE_TENANT_ID"),
 		Cache:                c,
 	})
-	// cred, _ := azidentity.NewInteractiveBrowserCredential(&azidentity.InteractiveBrowserCredentialOptions{
-	// 	TenantID:    cfg.drive.tenant_id,
-	// 	ClientID:    cfg.drive.client_id,
-	// 	RedirectURL: cfg.drive.redirect_url,
-
-	// 	Cache:       c,
-	// })
-
-	client, _ := graph.NewGraphServiceClientWithCredentials(
-		cred, []string{"User.Read", "Files.Read"})
-
-	result, err := client.Me().Drive().Get(context.Background(), nil)
 	if err != nil {
-		fmt.Printf("Error getting the drive: %v\n", err)
-		printOdataError(err)
+		// handle errorstore
+		fmt.Println("unable to get credential")
 		return
 	}
-	fmt.Printf("Found Drive : %v\n", *result.GetId())
-	driveId := *result.GetId()
+	fmt.Println("credential acquired")
 
-	root, _ := client.Drives().ByDriveId(driveId).Root().Get(context.Background(), nil)
-	rootId := *root.GetId()
-
-	folders, _ := client.Drives().ByDriveId(driveId).Items().ByDriveItemId(rootId).Children().Get(context.Background(), nil)
-
-	writer :=
-		folders.Serialize(s)
-	// for item := range result.GetRoot().GetChildren() {
-	// 	fmt.Printf("item: %v\n", item)
-	// }
-
-	// fmt.Println(client.Me().Drives())
-	// children.
-	// children.GetId()
-	// https://learn.microsoft.com/en-us/graph/api/driveitem-get?view=graph-rest-1.0&tabs=go
-	// https://learn.microsoft.com/en-us/graph/api/resources/onedrive?view=graph-rest-1.0
-
-}
-
-func printOdataError(err error) {
-	switch err.(type) {
-	case *odataerrors.ODataError:
-		typed := err.(*odataerrors.ODataError)
-		fmt.Printf("error:", typed.Error())
-		if terr := typed.GetErrorEscaped(); terr != nil {
-			fmt.Printf("code: %s", *terr.GetCode())
-			fmt.Printf("msg: %s", *terr.GetMessage())
-		}
-	default:
-		fmt.Printf("%T > error: %#v", err, err)
+	tokenOptions := policy.TokenRequestOptions{
+		Scopes: []string{"User.Read", "Files.Read"},
 	}
+	if record == (azidentity.AuthenticationRecord{}) {
+		// No stored record; call Authenticate to acquire one.
+		record, err = cred.Authenticate(context.TODO(), &tokenOptions)
+		if err != nil {
+			fmt.Println("unable to authenticate credential")
+			return
+		}
+		fmt.Println("credential authenticated")
+		err = storeRecord(record)
+		if err != nil {
+			fmt.Println("unable to store record")
+			return
+		}
+		fmt.Println("record stored")
+	}
+
+	accessToken, err := cred.GetToken(context.TODO(), tokenOptions)
+	if err != nil {
+		fmt.Printf("unable to get access token: %v", err)
+		return
+	}
+
+	filePath := "/Music/Video Games/Darren Korb/Songs of Supergiant Games/10 Remember the Bastion.mp3"
+	endpoint := fmt.Sprintf("drive/root:%s:/children", filePath)
+	baseurl := "https://graph.microsoft.com/v1.0/me"
+	url := fmt.Sprintf("%s/%s", baseurl, endpoint)
+
+	client := http.DefaultClient
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		fmt.Printf("failed to create request: %v\n", err)
+		return
+	}
+	req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", accessToken.Token))
+
+	response, err := client.Do(req)
+	if err != nil {
+		fmt.Printf("error: %v\n", err)
+		return
+	}
+	fmt.Printf("Response: %d\n", response.StatusCode)
+
 }
