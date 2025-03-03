@@ -16,11 +16,26 @@ func main() {
 		fmt.Println(err)
 		return
 	}
-	fmt.Printf("source.accessToken: %v\n", source.accessToken)
+	// fmt.Printf("source.accessToken: %v\n", source.accessToken)
 
-	source.GetFolder("/Music/Video Games/Darren Korb/" + "Songs of Supergiant Games/")
+	tracks, err := source.ScanFolder("/Music/Video Games/Darren Korb/")
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
 
-	fileData, _ := source.DownloadFile("F12027F22382A4D!505343")
+	for _, track := range tracks {
+		track.Print()
+	}
 
-	play(fileData)
+	if len(tracks) > 0 {
+		err = tracks[len(tracks)-1].Play()
+		if err != nil {
+			fmt.Println(err)
+		}
+	}
+
+	// fileData, _ := source.DownloadFile("F12027F22382A4D!505343")
+
+	// play(fileData)
 }
