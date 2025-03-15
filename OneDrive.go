@@ -43,6 +43,7 @@ func storeRecord(record azidentity.AuthenticationRecord) error {
 	return err
 }
 
+// Creates a OneDriveSource (implements Source) by authenticating with OneDrive
 func NewOneDriveSource(tokenOptions policy.TokenRequestOptions) (OneDriveSource, error) {
 	s := OneDriveSource{}
 	s.tokenOptions = tokenOptions
@@ -88,6 +89,7 @@ func NewOneDriveSource(tokenOptions policy.TokenRequestOptions) (OneDriveSource,
 	return s, nil
 }
 
+// Makes an authenticated request against a provided endpoint
 func (s OneDriveSource) Request(request string, endpoint string) (*http.Response, error) {
 	client := http.DefaultClient
 	req, err := http.NewRequest(request, endpoint, nil)
@@ -166,54 +168,7 @@ func (s OneDriveSource) ScanFolder(path string) ([]Track, error) {
 	return tracks, nil
 }
 
-func (s OneDriveSource) GetFolder(path string) ([]Track, error) {
-	baseurl := "https://graph.microsoft.com/v1.0/me"
-	var endpoint string
-	if path != "/" && path != "" {
-		endpoint = fmt.Sprintf("drive/root:%s:/children", path)
-	} else {
-		endpoint = "drive/root/children"
-	}
-	url := fmt.Sprintf("%s/%s", baseurl, endpoint)
-	fmt.Println("Getting: " + url)
-
-	resp, err := s.Request("GET", url)
-	if err != nil {
-		return nil, err
-	}
-
-	fmt.Printf("Response: %d\n", resp.StatusCode)
-
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, err
-	}
-
-	var result OneDriveResponse
-	err = json.Unmarshal(body, &result)
-	if err != nil {
-		return nil, err
-	}
-	result.Print()
-	// result.Print()
-	tracks := []Track{}
-	for _, item := range result.Value {
-		if item.Audio == (AudioMetadata{}) {
-			continue
-		}
-		tracks = append(tracks, Track{
-			FileName: item.Name,
-			Metadata: item.Audio,
-			MimeType: item.File.MimeType,
-			Data: OneDriveFileSource{
-				id:     item.ID,
-				source: &s,
-			},
-		})
-	}
-	return tracks, nil
-}
-
+// Given a OneDrive fileId string, gets the io.ReadCloser data for that file
 func (s OneDriveSource) DownloadFile(id string) (io.ReadCloser, error) {
 	if id == "" {
 		// error

@@ -1,12 +1,32 @@
 package main
 
 import (
+	"context"
+	"database/sql"
 	"fmt"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/policy"
+	"github.com/jthughes/gogroove/internal/database"
+	_ "modernc.org/sqlite"
 )
 
 func main() {
+	dbPath := "./library.db"
+	db, err := sql.Open("sqlite", dbPath)
+	if err != nil {
+		fmt.Printf("failed to open db: %v", err)
+		return
+	}
+
+	library := Library{
+		dbq: database.New(db),
+	}
+	err = library.dbq.CreateTable(context.TODO())
+	if err != nil {
+		fmt.Printf("Failed to initialize db for library: %v\n", err)
+		return
+	}
+
 	tokenOptions := policy.TokenRequestOptions{
 		Scopes: []string{"User.Read", "Files.Read"},
 	}
@@ -16,26 +36,6 @@ func main() {
 		fmt.Println(err)
 		return
 	}
-	// fmt.Printf("source.accessToken: %v\n", source.accessToken)
 
-	tracks, err := source.ScanFolder("/Music/Video Games/Darren Korb/")
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-
-	for _, track := range tracks {
-		track.Print()
-	}
-
-	if len(tracks) > 0 {
-		err = tracks[len(tracks)-1].Play()
-		if err != nil {
-			fmt.Println(err)
-		}
-	}
-
-	// fileData, _ := source.DownloadFile("F12027F22382A4D!505343")
-
-	// play(fileData)
+	library.ImportFromSource(source, "/Music/Video Games/Darren Korb/")
 }
