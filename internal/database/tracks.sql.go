@@ -10,33 +10,6 @@ import (
 	"database/sql"
 )
 
-const createTable = `-- name: CreateTable :exec
-CREATE TABLE IF NOT EXISTS tracks (
-	id TEXT PRIMARY KEY,
-	created_at TEXT NOT NULL,
-	updated_at TEXT NOT NULL,
-	file_name TEXT UNIQUE NOT NULL,
-    mime_type TEXT NOT NULL,
-    meta_album TEXT,
-	meta_album_artist TEXT,
-	meta_artist TEXT,
-	meta_bitrate INTEGER,
-	meta_duration INTEGER,
-	meta_genre TEXT,
-	meta_is_variable_bitrate INTEGER,
-	meta_title TEXT,
-	meta_track INTEGER,
-	meta_year INTEGER,
-	file_location TEXT NOT NULL,
-	file_source TEXT NOT NULL
-)
-`
-
-func (q *Queries) CreateTable(ctx context.Context) error {
-	_, err := q.db.ExecContext(ctx, createTable)
-	return err
-}
-
 const createTrack = `-- name: CreateTrack :one
 INSERT INTO tracks (
     id,
@@ -50,6 +23,7 @@ INSERT INTO tracks (
 	meta_bitrate,
 	meta_duration,
 	meta_genre,
+	meta_has_drm,
 	meta_is_variable_bitrate,
 	meta_title,
 	meta_track,
@@ -62,6 +36,7 @@ VALUES (
     ?,
     ?,
     ?,
+	?,
     ?,
     ?,
     ?,
@@ -74,7 +49,7 @@ VALUES (
     ?,
     ?,
     ?
-) RETURNING id, created_at, updated_at, file_name, mime_type, meta_album, meta_album_artist, meta_artist, meta_bitrate, meta_duration, meta_genre, meta_is_variable_bitrate, meta_title, meta_track, meta_year, file_location, file_source
+) RETURNING id, created_at, updated_at, file_name, mime_type, meta_album, meta_album_artist, meta_artist, meta_bitrate, meta_duration, meta_genre, meta_has_drm, meta_is_variable_bitrate, meta_title, meta_track, meta_year, file_location, file_source
 `
 
 type CreateTrackParams struct {
@@ -89,6 +64,7 @@ type CreateTrackParams struct {
 	MetaBitrate           sql.NullInt64
 	MetaDuration          sql.NullInt64
 	MetaGenre             sql.NullString
+	MetaHasDrm            sql.NullInt64
 	MetaIsVariableBitrate sql.NullInt64
 	MetaTitle             sql.NullString
 	MetaTrack             sql.NullInt64
@@ -110,6 +86,7 @@ func (q *Queries) CreateTrack(ctx context.Context, arg CreateTrackParams) (Track
 		arg.MetaBitrate,
 		arg.MetaDuration,
 		arg.MetaGenre,
+		arg.MetaHasDrm,
 		arg.MetaIsVariableBitrate,
 		arg.MetaTitle,
 		arg.MetaTrack,
@@ -130,6 +107,7 @@ func (q *Queries) CreateTrack(ctx context.Context, arg CreateTrackParams) (Track
 		&i.MetaBitrate,
 		&i.MetaDuration,
 		&i.MetaGenre,
+		&i.MetaHasDrm,
 		&i.MetaIsVariableBitrate,
 		&i.MetaTitle,
 		&i.MetaTrack,
@@ -169,7 +147,7 @@ func (q *Queries) GetAlbumsByName(ctx context.Context) ([]sql.NullString, error)
 }
 
 const getTracksByAlbum = `-- name: GetTracksByAlbum :many
-SELECT id, created_at, updated_at, file_name, mime_type, meta_album, meta_album_artist, meta_artist, meta_bitrate, meta_duration, meta_genre, meta_is_variable_bitrate, meta_title, meta_track, meta_year, file_location, file_source FROM tracks
+SELECT id, created_at, updated_at, file_name, mime_type, meta_album, meta_album_artist, meta_artist, meta_bitrate, meta_duration, meta_genre, meta_has_drm, meta_is_variable_bitrate, meta_title, meta_track, meta_year, file_location, file_source FROM tracks
 WHERE tracks.meta_album = ?
 ORDER BY meta_track ASC
 `
@@ -195,6 +173,7 @@ func (q *Queries) GetTracksByAlbum(ctx context.Context, metaAlbum sql.NullString
 			&i.MetaBitrate,
 			&i.MetaDuration,
 			&i.MetaGenre,
+			&i.MetaHasDrm,
 			&i.MetaIsVariableBitrate,
 			&i.MetaTitle,
 			&i.MetaTrack,

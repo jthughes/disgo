@@ -1,35 +1,44 @@
 package main
 
-import (
-	"io"
-)
+import "io"
 
 type Source interface {
 	ScanFolder(string) ([]Track, error)
+	DownloadFile(string) (io.ReadCloser, error)
 }
 
-type FileSource interface {
-	GetId() string
-	String() string
-	Get() (io.ReadCloser, error)
+type File struct {
+	location   string
+	sourceName string
+	source     Source
 }
 
-type OneDriveFileSource struct {
-	id     string
-	source *OneDriveSource
+func (f File) Get() (io.ReadCloser, error) {
+	return f.source.DownloadFile(f.location)
 }
 
-func (file OneDriveFileSource) Get() (io.ReadCloser, error) {
-	return file.source.DownloadFile(file.id)
-}
+// type FileSource interface {
+// 	GetId() string
+// 	String() string
+// 	Get() (io.ReadCloser, error)
+// }
 
-func (file OneDriveFileSource) GetId() string {
-	return file.id
-}
+// type OneDriveFileSource struct {
+// 	id     string
+// 	source *OneDriveSource
+// }
 
-func (file OneDriveFileSource) String() string {
-	return "onedrive"
-}
+// func (file OneDriveFileSource) Get() (io.ReadCloser, error) {
+// 	return file.source.DownloadFile(file.id)
+// }
+
+// func (file OneDriveFileSource) GetId() string {
+// 	return file.id
+// }
+
+// func (file OneDriveFileSource) String() string {
+// 	return "onedrive"
+// }
 
 // type DropboxFileSource struct {
 // 	id     string

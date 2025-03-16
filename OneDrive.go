@@ -23,6 +23,10 @@ type OneDriveSource struct {
 	accessToken  azcore.AccessToken
 }
 
+func (s OneDriveSource) String() string {
+	return "onedrive"
+}
+
 // https://pkg.go.dev/github.com/Azure/azure-sdk-for-go/sdk/azidentity@v1.8.2
 
 // this example shows file storage but any form of byte storage would work
@@ -148,9 +152,10 @@ func (s OneDriveSource) ScanFolder(path string) ([]Track, error) {
 				FileName: item.Name,
 				Metadata: item.Audio,
 				MimeType: item.File.MimeType,
-				Data: OneDriveFileSource{
-					id:     item.ID,
-					source: &s,
+				Data: File{
+					location:   item.ID,
+					sourceName: "onedrive",
+					source:     s,
 				},
 			})
 		} else if item.Folder != (OneDriveFolder{}) {

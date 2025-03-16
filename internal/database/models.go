@@ -20,6 +20,7 @@ type Track struct {
 	MetaBitrate           sql.NullInt64
 	MetaDuration          sql.NullInt64
 	MetaGenre             sql.NullString
+	MetaHasDrm            sql.NullInt64
 	MetaIsVariableBitrate sql.NullInt64
 	MetaTitle             sql.NullString
 	MetaTrack             sql.NullInt64

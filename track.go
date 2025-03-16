@@ -25,7 +25,7 @@ type AudioMetadata struct {
 }
 
 type Track struct {
-	Data     FileSource
+	Data     File
 	FileName string
 	Metadata AudioMetadata
 	MimeType string
@@ -59,7 +59,6 @@ func (t Track) Play() error {
 	speaker.Init(format.SampleRate, format.SampleRate.N(time.Second/10))
 	speaker.Play(streamer)
 	select {}
-	return nil
 }
 
 func (t Track) Print() {
