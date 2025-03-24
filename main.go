@@ -15,7 +15,6 @@ var schema string
 
 func main() {
 
-	fmt.Println("Starting up...")
 	dbPath := "./library.db"
 	db, err := sql.Open("sqlite", dbPath)
 	if err != nil {
@@ -34,8 +33,6 @@ func main() {
 		sources: make(map[string]Source),
 	}
 
-	fmt.Println("Done!")
-	fmt.Println("Authenticating with OneDrive...")
 	tokenOptions := policy.TokenRequestOptions{
 		Scopes: []string{"User.Read", "Files.Read"},
 	}
@@ -45,7 +42,6 @@ func main() {
 		fmt.Println(err)
 		return
 	}
-	fmt.Println("Done!")
 
 	library.sources[source.String()] = source
 

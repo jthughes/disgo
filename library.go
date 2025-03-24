@@ -72,14 +72,6 @@ func (l Library) ImportFromSource(source Source, target string) {
 
 }
 
-type Album struct {
-	Title  string
-	Artist string
-	Year   string
-	Genre  string
-	Tracks []Track
-}
-
 func (l Library) GetAlbums() ([]Album, error) {
 	albums := make([]Album, 0)
 	dbAlbums, err := l.dbq.GetAlbumsByName(context.TODO())

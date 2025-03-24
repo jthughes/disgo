@@ -120,7 +120,7 @@ func (q *Queries) CreateTrack(ctx context.Context, arg CreateTrackParams) (Track
 
 const getAlbumsByName = `-- name: GetAlbumsByName :many
 SELECT DISTINCT meta_album FROM tracks
-ORDER BY meta_album DESC
+ORDER BY meta_album ASC
 `
 
 func (q *Queries) GetAlbumsByName(ctx context.Context) ([]sql.NullString, error) {

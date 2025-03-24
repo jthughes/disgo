@@ -46,4 +46,4 @@ ORDER BY meta_track ASC;
 
 -- name: GetAlbumsByName :many
 SELECT DISTINCT meta_album FROM tracks
-ORDER BY meta_album DESC;
+ORDER BY meta_album ASC;

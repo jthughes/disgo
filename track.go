@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"log"
 	"time"
 
 	"github.com/gopxl/beep"
@@ -52,16 +51,26 @@ func (t Track) Play() error {
 	}
 
 	if err != nil {
-		log.Fatal("couldn't decode file")
+		// log.Fatal("couldn't decode file")
+		return fmt.Errorf("couldn't decode file: %w", err)
 	}
 	defer streamer.Close()
 
 	speaker.Init(format.SampleRate, format.SampleRate.N(time.Second/10))
-	speaker.Play(streamer)
-	select {}
+
+	done := make(chan bool)
+	speaker.Play(beep.Seq(streamer, beep.Callback(func() {
+		done <- true
+	})))
+	<-done
+	return nil
 }
 
 func (t Track) Print() {
+	fmt.Println(t.String())
+}
+
+func (t Track) String() string {
 	trackDuration := time.Duration(t.Metadata.Duration * int(time.Millisecond)).Truncate(time.Second).String()
-	fmt.Printf("%d - %s (%s)\n", t.Metadata.Track, t.Metadata.Title, trackDuration)
+	return fmt.Sprintf("%d - %s (%s)", t.Metadata.Track, t.Metadata.Title, trackDuration)
 }
