@@ -14,6 +14,8 @@ import (
 var schema string
 
 func main() {
+
+	fmt.Println("Starting up...")
 	dbPath := "./library.db"
 	db, err := sql.Open("sqlite", dbPath)
 	if err != nil {
@@ -32,6 +34,8 @@ func main() {
 		sources: make(map[string]Source),
 	}
 
+	fmt.Println("Done!")
+	fmt.Println("Authenticating with OneDrive...")
 	tokenOptions := policy.TokenRequestOptions{
 		Scopes: []string{"User.Read", "Files.Read"},
 	}
@@ -41,17 +45,9 @@ func main() {
 		fmt.Println(err)
 		return
 	}
+	fmt.Println("Done!")
+
 	library.sources[source.String()] = source
 
-	library.ImportFromSource(source, "/Music/Video Games/Darren Korb/")
-	albums, err := library.GetAlbums()
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-	for i, album := range albums {
-		fmt.Printf("[%d] %s (%s): %d tracks\n", i, album.Title, album.Year, len(album.Tracks))
-	}
-	album := albums[1]
-	album.Tracks[2].Play()
+	repl(&library)
 }

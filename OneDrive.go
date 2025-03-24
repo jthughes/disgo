@@ -119,14 +119,14 @@ func (s OneDriveSource) ScanFolder(path string) ([]Track, error) {
 		endpoint = "drive/root/children"
 	}
 	url := fmt.Sprintf("%s/%s", baseurl, endpoint)
-	fmt.Println("Getting: " + url)
+	// fmt.Println("Getting: " + url)
 
 	resp, err := s.Request("GET", url)
 	if err != nil {
 		return nil, err
 	}
 
-	fmt.Printf("Response: %d\n", resp.StatusCode)
+	// fmt.Printf("Response: %d\n", resp.StatusCode)
 
 	// Process request
 	body, err := io.ReadAll(resp.Body)
@@ -141,7 +141,7 @@ func (s OneDriveSource) ScanFolder(path string) ([]Track, error) {
 	}
 
 	if strings.Contains(path, "FLAC") {
-		result.Print()
+		// result.Print()
 	}
 
 	tracks := []Track{}
