@@ -4,8 +4,11 @@ import (
 	"database/sql"
 	_ "embed"
 	"fmt"
+	"time"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/policy"
+	"github.com/gopxl/beep"
+	"github.com/gopxl/beep/speaker"
 	"github.com/jthughes/gogroove/internal/database"
 	_ "modernc.org/sqlite"
 )
@@ -45,5 +48,22 @@ func main() {
 
 	library.sources[source.String()] = source
 
-	repl(&library)
+	player := Player{
+		Playlist:         nil,
+		Repeat:           false,
+		PlaylistPosition: -1,
+		Controller: &beep.Ctrl{
+			Streamer: &Queue{},
+		},
+	}
+
+	config := Config{
+		library: &library,
+		player:  &player,
+	}
+	sr := beep.SampleRate(44100)
+	speaker.Init(sr, sr.N(time.Second/10))
+	player.Init()
+
+	repl(&config)
 }

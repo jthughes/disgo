@@ -66,6 +66,34 @@ func (t Track) Play() error {
 	return nil
 }
 
+func (t Track) Stream() (beep.StreamSeekCloser, error) {
+	data, err := t.Data.Get()
+	if err != nil {
+		return nil, err
+	}
+	var streamer beep.StreamSeekCloser
+	// var format beep.Format
+	switch t.MimeType {
+	case "audio/mpeg":
+		streamer, _, err = mp3.Decode(data)
+	// case "audio/flac":
+	// 	streamer, format, err = flac.Decode(data)
+	// case "audio/ogg":
+	// 	streamer, format, err = vorbis.Decode(data)
+	// case "audio/wav":
+	// 	streamer, format, err = wav.Decode(data)
+	default:
+		return nil, fmt.Errorf("unrecognised file type: %s", t.MimeType)
+	}
+
+	if err != nil {
+		// log.Fatal("couldn't decode file")
+		return nil, fmt.Errorf("couldn't decode file: %w", err)
+	}
+	// defer streamer.Close()
+	return streamer, nil
+}
+
 func (t Track) Print() {
 	fmt.Println(t.String())
 }

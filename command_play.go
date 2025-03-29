@@ -11,26 +11,26 @@ func commandPlay(config *Config, args []string) error {
 		return nil
 	}
 
-	shuffle := false
-	repeat := false
+	// shuffle := false
+	// repeat := false
 
-	if len(args) == 3 {
-		for i, c := range args[2] {
-			if i == 0 {
-				if c != '-' {
-					return fmt.Errorf("expected '-' got '%c'", c)
-				}
-				continue
-			}
-			if c == 's' {
-				shuffle = true
-			} else if c == 'r' {
-				repeat = true
-			} else {
-				return fmt.Errorf("unexpected flag '%c'- valid flags: (r)epeat, (s)huffle", c)
-			}
-		}
-	}
+	// if len(args) == 3 {
+	// 	for i, c := range args[2] {
+	// 		if i == 0 {
+	// 			if c != '-' {
+	// 				return fmt.Errorf("expected '-' got '%c'", c)
+	// 			}
+	// 			continue
+	// 		}
+	// 		if c == 's' {
+	// 			shuffle = true
+	// 		} else if c == 'r' {
+	// 			repeat = true
+	// 		} else {
+	// 			return fmt.Errorf("unexpected flag '%c'- valid flags: (r)epeat, (s)huffle", c)
+	// 		}
+	// 	}
+	// }
 
 	selection, err := strconv.Atoi(args[1])
 	if err != nil {
@@ -46,6 +46,7 @@ func commandPlay(config *Config, args []string) error {
 		return fmt.Errorf("invalid selection: %d not in range [0, %d]", selection, len(albums)-1)
 	}
 	album := albums[selection]
-	album.Play(shuffle, repeat)
+	// album.Play(shuffle, repeat)
+	config.player.AddAlbumToPlaylist(album)
 	return nil
 }

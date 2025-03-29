@@ -61,6 +61,7 @@ type cliCommand struct {
 
 type Config struct {
 	library *Library
+	player  *Player
 }
 
 func registerCommands() (commands map[string]cliCommand) {
@@ -90,6 +91,26 @@ func registerCommands() (commands map[string]cliCommand) {
 		description: "Plays designated album",
 		callback:    commandPlay,
 	}
+	// commands["next"] = cliCommand{
+	// 	name:        "next",
+	// 	description: "Plays the next track",
+	// 	callback:    commandNext,
+	// }
+	// commands["previous"] = cliCommand{
+	// 	name:        "previous",
+	// 	description: "Plays the previous track",
+	// 	callback:    commandPrevious,
+	// }
+	commands["pause"] = cliCommand{
+		name:        "pause",
+		description: "Pauses the current track",
+		callback:    commandPause,
+	}
+	commands["resume"] = cliCommand{
+		name:        "resume",
+		description: "Resumes the current track",
+		callback:    commandResume,
+	}
 	commands["exit"] = cliCommand{
 		name:        "exit",
 		description: "Exit the Pokedex",
@@ -98,12 +119,9 @@ func registerCommands() (commands map[string]cliCommand) {
 	return commands
 }
 
-func repl(l *Library) {
+func repl(c *Config) {
 	commands = registerCommands()
 
-	config := Config{
-		library: l,
-	}
 	scanner := bufio.NewScanner(os.Stdin)
 	for {
 		fmt.Print("GoGroovy > ")
@@ -115,7 +133,7 @@ func repl(l *Library) {
 			fmt.Println("Unknown command")
 			continue
 		}
-		err := command.callback(&config, words)
+		err := command.callback(c, words)
 		if err != nil {
 			fmt.Println(err.Error())
 		}
