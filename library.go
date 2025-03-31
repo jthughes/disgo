@@ -7,7 +7,7 @@ import (
 	"time"
 
 	dbuuid "github.com/google/uuid"
-	"github.com/jthughes/gogroove/internal/database"
+	"github.com/jthughes/disgo/internal/database"
 )
 
 type Library struct {

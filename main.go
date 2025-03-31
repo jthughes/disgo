@@ -9,7 +9,7 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/policy"
 	"github.com/gopxl/beep"
 	"github.com/gopxl/beep/speaker"
-	"github.com/jthughes/gogroove/internal/database"
+	"github.com/jthughes/disgo/internal/database"
 	_ "modernc.org/sqlite"
 )
 

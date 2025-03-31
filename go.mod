@@ -1,4 +1,4 @@
-module github.com/jthughes/gogroove
+module github.com/jthughes/disgo
 
 go 1.23.4
 
