@@ -91,16 +91,26 @@ func registerCommands() (commands map[string]cliCommand) {
 		description: "Plays designated album",
 		callback:    commandPlay,
 	}
-	// commands["next"] = cliCommand{
-	// 	name:        "next",
-	// 	description: "Plays the next track",
-	// 	callback:    commandNext,
-	// }
-	// commands["previous"] = cliCommand{
-	// 	name:        "previous",
-	// 	description: "Plays the previous track",
-	// 	callback:    commandPrevious,
-	// }
+	commands["stop"] = cliCommand{
+		name:        "stop",
+		description: "Stops playing current playlist",
+		callback:    commandStop,
+	}
+	commands["repeat"] = cliCommand{
+		name:        "repeat",
+		description: "Toggles album repeat",
+		callback:    commandRepeat,
+	}
+	commands["next"] = cliCommand{
+		name:        "next",
+		description: "Plays the next track",
+		callback:    commandNext,
+	}
+	commands["previous"] = cliCommand{
+		name:        "previous",
+		description: "Plays the previous track",
+		callback:    commandPrevious,
+	}
 	commands["pause"] = cliCommand{
 		name:        "pause",
 		description: "Pauses the current track",
