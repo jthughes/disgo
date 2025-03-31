@@ -9,45 +9,6 @@ import (
 
 var commands map[string]cliCommand
 
-type History struct {
-	commands []string
-	position int
-}
-
-func (h *History) add(command string) {
-	h.commands = append(h.commands, command)
-	h.position += 1
-}
-
-func (h *History) get() string {
-	if len(commands) == 0 {
-		return ""
-	}
-	return h.commands[h.position]
-}
-
-func (h *History) prev() string {
-	if len(commands) == 0 {
-		return ""
-	}
-	h.position -= 1
-	if h.position < 0 {
-		h.position = 0
-	}
-	return h.get()
-}
-
-func (h *History) next() string {
-	if len(commands) == 0 {
-		return ""
-	}
-	h.position += 1
-	if h.position >= len(h.commands) {
-		h.position = len(h.commands) - 1
-	}
-	return h.get()
-}
-
 func cleanInput(text string) []string {
 	words := strings.Fields(strings.ToLower(text))
 	return words
@@ -123,7 +84,7 @@ func registerCommands() (commands map[string]cliCommand) {
 	}
 	commands["exit"] = cliCommand{
 		name:        "exit",
-		description: "Exit the Pokedex",
+		description: "Exit disgo",
 		callback:    commandExit,
 	}
 	return commands
@@ -134,7 +95,7 @@ func repl(c *Config) {
 
 	scanner := bufio.NewScanner(os.Stdin)
 	for {
-		fmt.Print("GoGroovy > ")
+		fmt.Print("disgo > ")
 		scanner.Scan()
 		input := scanner.Text()
 		words := cleanInput(input)
