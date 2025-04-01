@@ -30,29 +30,31 @@ func (s OneDriveSource) String() string {
 // https://pkg.go.dev/github.com/Azure/azure-sdk-for-go/sdk/azidentity@v1.8.2
 
 // this example shows file storage but any form of byte storage would work
-func retrieveRecord() (azidentity.AuthenticationRecord, error) {
+func (cfg Config) retrieveRecord() (azidentity.AuthenticationRecord, error) {
 	record := azidentity.AuthenticationRecord{}
-	b, err := os.ReadFile("./entra.record.json")
+	path := fmt.Sprintf("%s/entra.record.json", cfg.configPath)
+	b, err := os.ReadFile(path)
 	if err == nil {
 		err = json.Unmarshal(b, &record)
 	}
 	return record, err
 }
 
-func storeRecord(record azidentity.AuthenticationRecord) error {
+func (cfg Config) storeRecord(record azidentity.AuthenticationRecord) error {
 	b, err := json.Marshal(record)
 	if err == nil {
-		err = os.WriteFile("./entra.record.json", b, 0600)
+		path := fmt.Sprintf("%s/entra.record.json", cfg.configPath)
+		err = os.WriteFile(path, b, 0700)
 	}
 	return err
 }
 
 // Creates a OneDriveSource (implements Source) by authenticating with OneDrive
-func NewOneDriveSource(tokenOptions policy.TokenRequestOptions) (OneDriveSource, error) {
+func (cfg Config) NewOneDriveSource(tokenOptions policy.TokenRequestOptions) (OneDriveSource, error) {
 	s := OneDriveSource{}
 	s.tokenOptions = tokenOptions
 	godotenv.Load()
-	record, err := retrieveRecord()
+	record, err := cfg.retrieveRecord()
 	if err != nil {
 		fmt.Println("unable to retrieve record")
 	}
@@ -63,8 +65,8 @@ func NewOneDriveSource(tokenOptions policy.TokenRequestOptions) (OneDriveSource,
 
 	s.cred, err = azidentity.NewInteractiveBrowserCredential(&azidentity.InteractiveBrowserCredentialOptions{
 		AuthenticationRecord: record,
-		ClientID:             os.Getenv("DRIVE_CLIENT_ID"),
-		TenantID:             os.Getenv("DRIVE_TENANT_ID"),
+		ClientID:             "01cf73e8-6601-4df1-8282-03ccd68a7075",
+		TenantID:             "common",
 		Cache:                c,
 	})
 	if err != nil {
@@ -79,7 +81,7 @@ func NewOneDriveSource(tokenOptions policy.TokenRequestOptions) (OneDriveSource,
 			return OneDriveSource{}, fmt.Errorf("unable to authenticate credential: %w", err)
 		}
 		fmt.Println("credential authenticated")
-		err = storeRecord(record)
+		err = cfg.storeRecord(record)
 		if err != nil {
 
 			return OneDriveSource{}, fmt.Errorf("unable to store record: %w", err)

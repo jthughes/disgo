@@ -3,7 +3,10 @@ package main
 import (
 	"database/sql"
 	_ "embed"
+	"errors"
 	"fmt"
+	"log"
+	"os"
 	"time"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/policy"
@@ -17,8 +20,20 @@ import (
 var schema string
 
 func main() {
+	homeDir, err := os.UserHomeDir()
+	if err != nil {
+		fmt.Printf("failed to access user home directory for config: %v", err)
+		return
+	}
+	configPath := fmt.Sprintf("%s/.disgo", homeDir)
+	if _, err := os.Stat(configPath); errors.Is(err, os.ErrNotExist) {
+		err := os.Mkdir(configPath, 0700)
+		if err != nil {
+			log.Println(err)
+		}
+	}
 
-	dbPath := "./library.db"
+	dbPath := fmt.Sprintf("%s/library.db", configPath)
 	db, err := sql.Open("sqlite", dbPath)
 	if err != nil {
 		fmt.Printf("failed to open db: %v", err)
@@ -36,18 +51,6 @@ func main() {
 		sources: make(map[string]Source),
 	}
 
-	tokenOptions := policy.TokenRequestOptions{
-		Scopes: []string{"User.Read", "Files.Read"},
-	}
-
-	source, err := NewOneDriveSource(tokenOptions)
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-
-	library.sources[source.String()] = source
-
 	player := Player{
 		Playlist:         nil,
 		Repeat:           false,
@@ -58,9 +61,23 @@ func main() {
 	}
 
 	config := Config{
-		library: &library,
-		player:  &player,
+		configPath: configPath,
+		library:    &library,
+		player:     &player,
 	}
+
+	tokenOptions := policy.TokenRequestOptions{
+		Scopes: []string{"User.Read", "Files.Read"},
+	}
+
+	source, err := config.NewOneDriveSource(tokenOptions)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	library.sources[source.String()] = source
+
 	sr := beep.SampleRate(44100)
 	speaker.Init(sr, sr.N(time.Second/10))
 	player.Init()

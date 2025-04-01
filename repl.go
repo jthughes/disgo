@@ -21,8 +21,9 @@ type cliCommand struct {
 }
 
 type Config struct {
-	library *Library
-	player  *Player
+	configPath string
+	library    *Library
+	player     *Player
 }
 
 func registerCommands() (commands map[string]cliCommand) {
@@ -32,11 +33,6 @@ func registerCommands() (commands map[string]cliCommand) {
 		description: "Displays list of available commands",
 		callback:    commandHelp,
 	}
-	// commands["login"] = cliCommand{
-	// 	name:        "login",
-	// 	description: "Authenticates with OneDrive",
-	// 	callback:    commandLogin,
-	// }
 	commands["scan"] = cliCommand{
 		name:        "scan",
 		description: "Scans OneDrive folder for new music",

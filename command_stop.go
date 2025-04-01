@@ -15,5 +15,7 @@ func commandStop(config *Config, args []string) error {
 	config.player.Controller.Streamer = nil
 	speaker.Unlock()
 	config.player.PlaylistCancel()
+	config.player.Playlist = nil
+	config.player.PlaylistPosition = -1
 	return nil
 }
