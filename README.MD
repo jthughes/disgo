@@ -1,9 +1,12 @@
 # DisGo
 DisGo is CLI music player for streaming music from OneDrive. 
 
+![demo](demo.gif)
+(Gif created using [VHS](https://github.com/charmbracelet/vhs))
+
 ## Usage
 1. On first time run, the browser will open and prompt to authenticate with OneDrive. Sign in with OneDrive account where your music is stored and accept the permisions.
-2. Use the ``scan <folder>`` command with a valid folder to find all the music albums in that folder. This should be a folder path relative to your OneDrive root. So if in the root of your OneDrive, you have a ``Music/`` folder, and you want to scan the ``Video Game/`` folder inside, you would run the command ``scan Music/Video\ Game/``. This creates a sqlite database of metadata called ``library.db``.
+2. Use the ``scan <folder>`` command with a valid folder to find all the music albums in that folder. This should be a folder path relative to your OneDrive root. So if in the root of your OneDrive, you have a ``Music/`` folder, and you want to scan the ``Video Games/`` folder inside, you would run the command ``scan /Music/Video Games/``. This creates a sqlite database of metadata called ``library.db``.
 3. Run ``ls`` to list all albums found in ``library.db``.
 4. Run ``play <#>`` where # is the number listed against an album as a result of running ``ls``.
 5. Run ``help`` to learn about other commands.

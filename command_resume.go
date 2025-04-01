@@ -5,7 +5,7 @@ import (
 )
 
 func commandResume(config *Config, args []string) error {
-	if len(args) != 1 {
+	if len(args) != 0 {
 		fmt.Println("Expecting: resume")
 		return nil
 	}

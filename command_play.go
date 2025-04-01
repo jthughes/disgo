@@ -6,7 +6,7 @@ import (
 )
 
 func commandPlay(config *Config, args []string) error {
-	if len(args) < 2 || len(args) > 3 {
+	if len(args) < 1 || len(args) > 2 {
 		fmt.Println("Expecting: play <#> [-sr]")
 		return nil
 	}
@@ -14,8 +14,8 @@ func commandPlay(config *Config, args []string) error {
 	// shuffle := false
 	repeat := false
 
-	if len(args) == 3 {
-		for i, c := range args[2] {
+	if len(args) == 2 {
+		for i, c := range args[1] {
 			if i == 0 {
 				if c != '-' {
 					return fmt.Errorf("expected '-' got '%c'", c)
@@ -34,7 +34,7 @@ func commandPlay(config *Config, args []string) error {
 	}
 	config.player.Repeat = repeat
 
-	selection, err := strconv.Atoi(args[1])
+	selection, err := strconv.Atoi(args[0])
 	if err != nil {
 		return fmt.Errorf("unrecognised album number: %w", err)
 	}
@@ -50,6 +50,8 @@ func commandPlay(config *Config, args []string) error {
 	album := albums[selection]
 	// album.Play(shuffle, repeat)
 	config.player.AddAlbumToPlaylist(album)
+
 	config.player.Play()
+	fmt.Printf("Playing Album: %s\n", album.String())
 	return nil
 }

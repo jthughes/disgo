@@ -9,9 +9,9 @@ import (
 
 var commands map[string]cliCommand
 
-func cleanInput(text string) []string {
-	words := strings.Fields(strings.ToLower(text))
-	return words
+func processInput(text string) (string, []string) {
+	words := strings.Fields(text)
+	return words[0], words[1:]
 }
 
 type cliCommand struct {
@@ -51,6 +51,21 @@ func registerCommands() (commands map[string]cliCommand) {
 		name:        "play",
 		description: "Plays designated album",
 		callback:    commandPlay,
+	}
+	commands["playing"] = cliCommand{
+		name:        "playing",
+		description: "Shows info about current playing track",
+		callback:    commandPlaying,
+	}
+	commands["?"] = cliCommand{
+		name:        "?",
+		description: "Shows info about current playing track",
+		callback:    commandPlaying,
+	}
+	commands["playlist"] = cliCommand{
+		name:        "playlist",
+		description: "Shows the current playlist",
+		callback:    commandPlaylist,
 	}
 	commands["stop"] = cliCommand{
 		name:        "stop",
@@ -98,13 +113,13 @@ func repl(c *Config) {
 		fmt.Print("disgo > ")
 		scanner.Scan()
 		input := scanner.Text()
-		words := cleanInput(input)
-		command, ok := commands[words[0]]
+		commandText, args := processInput(input)
+		command, ok := commands[commandText]
 		if !ok {
 			fmt.Println("Unknown command")
 			continue
 		}
-		err := command.callback(c, words)
+		err := command.callback(c, args)
 		if err != nil {
 			fmt.Println(err.Error())
 		}
