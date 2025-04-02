@@ -4,14 +4,17 @@ DisGo is CLI music player for streaming music from OneDrive.
 ![demo](demo.gif)
 (Gif created using [VHS](https://github.com/charmbracelet/vhs))
 
-## Requirements
-- disgo was built on a Debian-based linux distribution. No other configurations have been tested, but likely works where ever the underlying libraries are supported (beep/oto).
-- For WSL2 users, in the same way WSL doesn't support GUI applications out of the box, neither does it support audio. Use of a media player in that environment likely requires setting up something like PulseAudio to facilitate audio playback. There appear to be a number of guides on the specifics, but I have not tried any as yet.
 
-## Installation 
+## Installation
+### Binaries
+- Binaries are provided for Linux, Windows, and MacOS (amd64 and arm64), and should execute without dependencies
+   - The MacOS binaries are presently untested
+### Source
 - Requires [Go to be installed](https://go.dev/doc/install)
 - Make sure your [Go install directory is in your PATH]()
-- Download the source and build & install by running ``go install .`` from inside the source
+- To install, either:
+   - Download the source and run ``go install .`` from inside the source, or
+   - Run ``go install github.com/jthughes/disgo``
 
 ## Usage
 1. On first time run, ``.disgo/`` will be created in your home directory to store your library metadata and other configuration data. The browser will also open and prompt to authenticate with OneDrive. Sign in with OneDrive account where your music is stored and accept the permisions.
@@ -26,15 +29,16 @@ I have ~100GB audio library stored on my personal OneDrive account. Using [Micro
 ### Future Expansion
 - Build playlists
 - Shuffle playlists
-- Save local copies of albums:
-  - Choose to download specific albums
-  - Option to store any streamed file
-- Add local folders to library, independent of OneDrive
-- Add other cloud storage providers
-- DBUS/MPRIS integration
+- Add file sources:
+  - Dropbox
+  - Google Drive
+  - Local files
+  - Local cache of cloud files
+- DBUS/MPRIS integration (interact with media keys/bluetooth headphone controls)
 - UI with [BubbleTea](https://github.com/charmbracelet/bubbletea)
+  - Message history
+  - Visual feedback for current playing track (sliders, etc)
 - Support for additional file types
-- Other OS support?
 
 ## Built using
 - [Beep](https://github.com/gopxl/beep)
