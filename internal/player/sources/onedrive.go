@@ -1,97 +1,93 @@
-package main
+package sources
 
 import (
 	"context"
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"os"
 	"strings"
 	"time"
 
-	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/policy"
-	azidentity "github.com/Azure/azure-sdk-for-go/sdk/azidentity"
-	azcache "github.com/Azure/azure-sdk-for-go/sdk/azidentity/cache"
-	"github.com/joho/godotenv"
+	"github.com/AzureAD/microsoft-authentication-library-for-go/apps/cache"
+	"github.com/AzureAD/microsoft-authentication-library-for-go/apps/public"
+	"github.com/jthughes/disgo/internal/player"
+	"github.com/jthughes/disgo/internal/repl"
 )
 
 type OneDriveSource struct {
-	cred         *azidentity.InteractiveBrowserCredential
 	tokenOptions policy.TokenRequestOptions
-	accessToken  azcore.AccessToken
+	userAccount  public.Account
+	accessToken  string
 }
 
 func (s OneDriveSource) String() string {
 	return "onedrive"
 }
 
-// https://pkg.go.dev/github.com/Azure/azure-sdk-for-go/sdk/azidentity@v1.8.2
-
-// this example shows file storage but any form of byte storage would work
-func (cfg Config) retrieveRecord() (azidentity.AuthenticationRecord, error) {
-	record := azidentity.AuthenticationRecord{}
-	path := fmt.Sprintf("%s/entra.record.json", cfg.configPath)
-	b, err := os.ReadFile(path)
-	if err == nil {
-		err = json.Unmarshal(b, &record)
-	}
-	return record, err
+type TokenCache struct {
+	file string
 }
 
-func (cfg Config) storeRecord(record azidentity.AuthenticationRecord) error {
-	b, err := json.Marshal(record)
-	if err == nil {
-		path := fmt.Sprintf("%s/entra.record.json", cfg.configPath)
-		err = os.WriteFile(path, b, 0700)
+func (t *TokenCache) Replace(ctx context.Context, cache cache.Unmarshaler, hints cache.ReplaceHints) error {
+	data, err := os.ReadFile(t.file)
+	if err != nil {
+		log.Println(err)
 	}
-	return err
+	return cache.Unmarshal(data)
+}
+
+func (t *TokenCache) Export(ctx context.Context, cache cache.Marshaler, hints cache.ExportHints) error {
+	data, err := cache.Marshal()
+	if err != nil {
+		log.Println(err)
+	}
+	return os.WriteFile(t.file, data, 0600)
 }
 
 // Creates a OneDriveSource (implements Source) by authenticating with OneDrive
-func (cfg Config) NewOneDriveSource(tokenOptions policy.TokenRequestOptions) (OneDriveSource, error) {
+func InitOneDriveSource(cfg repl.Config) (OneDriveSource, error) {
+
+	cache := TokenCache{
+		file: fmt.Sprintf("%s/.onedrive.cache", cfg.ConfigPath),
+	}
+	client, err := public.New(
+		"01cf73e8-6601-4df1-8282-03ccd68a7075", // Client ID
+		public.WithCache(&cache),
+		public.WithAuthority("https://login.microsoftonline.com/common"), // Tennant ID
+	)
+	if err != nil {
+		return OneDriveSource{}, err
+	}
+
+	accounts, err := client.Accounts(context.TODO())
+	if err != nil {
+		return OneDriveSource{}, err
+	}
+	tokenOptions := policy.TokenRequestOptions{
+		Scopes: []string{"User.Read", "Files.Read"},
+	}
+	var result public.AuthResult
+	if len(accounts) > 0 {
+		// There may be more accounts; here we assume the first one is wanted.
+		// AcquireTokenSilent returns a non-nil error when it can't provide a token.
+		result, err = client.AcquireTokenSilent(context.TODO(), tokenOptions.Scopes, public.WithSilentAccount(accounts[0]))
+	}
+	if err != nil || len(accounts) == 0 {
+		// cache miss, authenticate a user with another AcquireToken* method
+		result, err = client.AcquireTokenInteractive(context.TODO(), tokenOptions.Scopes)
+		if err != nil {
+			// TODO: handle error
+		}
+	}
+
 	s := OneDriveSource{}
 	s.tokenOptions = tokenOptions
-	godotenv.Load()
-	record, err := cfg.retrieveRecord()
-	if err != nil {
-		fmt.Println("unable to retrieve record")
-	}
-	c, err := azcache.New(nil)
-	if err != nil {
-		return OneDriveSource{}, fmt.Errorf("persistent cache impossible: %w", err)
-	}
-
-	s.cred, err = azidentity.NewInteractiveBrowserCredential(&azidentity.InteractiveBrowserCredentialOptions{
-		AuthenticationRecord: record,
-		ClientID:             "01cf73e8-6601-4df1-8282-03ccd68a7075",
-		TenantID:             "common",
-		Cache:                c,
-	})
-	if err != nil {
-		return OneDriveSource{}, fmt.Errorf("unable to get credential: %w", err)
-	}
-
-	if record == (azidentity.AuthenticationRecord{}) {
-		fmt.Println("prompting user for authentication...")
-		// No stored record; call Authenticate to acquire one.
-		record, err = s.cred.Authenticate(context.TODO(), &tokenOptions)
-		if err != nil {
-			return OneDriveSource{}, fmt.Errorf("unable to authenticate credential: %w", err)
-		}
-		fmt.Println("credential authenticated")
-		err = cfg.storeRecord(record)
-		if err != nil {
-
-			return OneDriveSource{}, fmt.Errorf("unable to store record: %w", err)
-		}
-		fmt.Println("record stored")
-	}
-	s.accessToken, err = s.cred.GetToken(context.TODO(), s.tokenOptions)
-	if err != nil {
-		return OneDriveSource{}, fmt.Errorf("unable to get access token: %w", err)
-	}
+	s.accessToken = result.AccessToken
+	s.userAccount = result.Account
 	return s, nil
 }
 
@@ -102,7 +98,7 @@ func (s OneDriveSource) Request(request string, endpoint string) (*http.Response
 	if err != nil {
 		return nil, fmt.Errorf("failed to create request: %w", err)
 	}
-	req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", s.accessToken.Token))
+	req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", s.accessToken))
 
 	resp, err := client.Do(req)
 	if err != nil {
@@ -111,7 +107,7 @@ func (s OneDriveSource) Request(request string, endpoint string) (*http.Response
 	return resp, err
 }
 
-func (s OneDriveSource) ScanFolder(path string) ([]Track, error) {
+func (s OneDriveSource) ScanFolder(path string) ([]player.Track, error) {
 	// Build request
 	baseurl := "https://graph.microsoft.com/v1.0/me"
 	var endpoint string
@@ -146,19 +142,15 @@ func (s OneDriveSource) ScanFolder(path string) ([]Track, error) {
 		// result.Print()
 	}
 
-	tracks := []Track{}
+	tracks := []player.Track{}
 	for _, item := range result.Value {
-		if item.Audio != (AudioMetadata{}) {
+		if item.Audio != (player.AudioMetadata{}) {
 			// Add Track
-			tracks = append(tracks, Track{
+			tracks = append(tracks, player.Track{
 				FileName: item.Name,
 				Metadata: item.Audio,
 				MimeType: item.File.MimeType,
-				Data: File{
-					location:   item.ID,
-					sourceName: "onedrive",
-					source:     s,
-				},
+				Data:     player.NewFile(item.ID, s.String(), s),
 			})
 		} else if item.Folder != (OneDriveFolder{}) {
 			// Recursively add tracks from nested folder
@@ -216,7 +208,7 @@ type OneDriveResponse struct {
 			Name      string `json:"name"`
 			Path      string `json:"path"`
 		} `json:"parentReference"`
-		Audio AudioMetadata `json:"audio,omitempty"`
+		Audio player.AudioMetadata `json:"audio,omitempty"`
 		File  struct {
 			MimeType string `json:"mimeType"`
 			Hashes   struct {

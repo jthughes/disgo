@@ -1,10 +1,12 @@
-package main
+package repl
 
 import (
 	"bufio"
 	"fmt"
 	"os"
 	"strings"
+
+	"github.com/jthughes/disgo/internal/player"
 )
 
 var commands map[string]cliCommand
@@ -21,9 +23,17 @@ type cliCommand struct {
 }
 
 type Config struct {
-	configPath string
-	library    *Library
-	player     *Player
+	ConfigPath string
+	library    *player.Library
+	player     *player.Player
+}
+
+func InitConfig(cfgPath string, lib *player.Library, player *player.Player) Config {
+	return Config{
+		ConfigPath: cfgPath,
+		library:    lib,
+		player:     player,
+	}
 }
 
 func registerCommands() (commands map[string]cliCommand) {
@@ -101,7 +111,7 @@ func registerCommands() (commands map[string]cliCommand) {
 	return commands
 }
 
-func repl(c *Config) {
+func Run(c *Config) {
 	commands = registerCommands()
 
 	scanner := bufio.NewScanner(os.Stdin)

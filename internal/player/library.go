@@ -1,4 +1,4 @@
-package main
+package player
 
 import (
 	"context"
@@ -12,7 +12,14 @@ import (
 
 type Library struct {
 	dbq     *database.Queries
-	sources map[string]Source
+	Sources map[string]Source
+}
+
+func InitLibrary(dbq *database.Queries, src map[string]Source) Library {
+	return Library{
+		dbq:     dbq,
+		Sources: src,
+	}
 }
 
 func (l Library) ImportTrack(track Track) error {
@@ -97,7 +104,7 @@ func (l Library) GetAlbums() ([]Album, error) {
 				Data: File{
 					location:   track.FileLocation,
 					sourceName: track.FileSource,
-					source:     l.sources[track.FileSource],
+					source:     l.Sources[track.FileSource],
 				},
 				FileName: track.FileName,
 				Metadata: AudioMetadata{

@@ -1,4 +1,4 @@
-package main
+package util
 
 import (
 	"fmt"
@@ -6,7 +6,7 @@ import (
 	"github.com/gopxl/beep"
 )
 
-func clamp(i, min, max int) (int, error) {
+func Clamp(i, min, max int) (int, error) {
 	if min > max {
 		return 0, fmt.Errorf("min larger than max")
 	}

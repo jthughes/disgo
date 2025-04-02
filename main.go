@@ -9,10 +9,13 @@ import (
 	"os"
 	"time"
 
-	"github.com/Azure/azure-sdk-for-go/sdk/azcore/policy"
 	"github.com/gopxl/beep"
 	"github.com/gopxl/beep/speaker"
 	"github.com/jthughes/disgo/internal/database"
+	"github.com/jthughes/disgo/internal/player"
+	"github.com/jthughes/disgo/internal/player/sources"
+	"github.com/jthughes/disgo/internal/repl"
+	"github.com/jthughes/disgo/internal/util"
 	_ "modernc.org/sqlite"
 )
 
@@ -20,6 +23,7 @@ import (
 var schema string
 
 func main() {
+	// Set up user config folder
 	homeDir, err := os.UserHomeDir()
 	if err != nil {
 		fmt.Printf("failed to access user home directory for config: %v", err)
@@ -33,54 +37,55 @@ func main() {
 		}
 	}
 
+	// Setup logging
+	logFile, err := os.OpenFile(fmt.Sprintf("%s/log.txt", configPath), os.O_CREATE|os.O_APPEND|os.O_RDWR, 0600)
+	if err != nil {
+		panic(err)
+	}
+	defer logFile.Close()
+	log.SetOutput(logFile)
+
 	dbPath := fmt.Sprintf("%s/library.db", configPath)
 	db, err := sql.Open("sqlite", dbPath)
 	if err != nil {
-		fmt.Printf("failed to open db: %v", err)
+		out := fmt.Sprintf("failed to open db: %v", err)
+		fmt.Println(out)
+		log.Println(out)
 		return
 	}
 
 	_, err = db.Exec(schema)
 	if err != nil {
-		fmt.Printf("Failed to initialize db for library: %v\n", err)
+		out := fmt.Sprintf("Failed to initialize db for library: %v", err)
+		fmt.Println(out)
+		log.Println(out)
 		return
 	}
 
-	library := Library{
-		dbq:     database.New(db),
-		sources: make(map[string]Source),
-	}
+	library := player.InitLibrary(database.New(db), make(map[string]player.Source))
 
-	player := Player{
+	player := player.Player{
 		Playlist:         nil,
 		Repeat:           false,
 		PlaylistPosition: -1,
 		Controller: &beep.Ctrl{
-			Streamer: &Queue{},
+			Streamer: &util.Queue{},
 		},
 	}
 
-	config := Config{
-		configPath: configPath,
-		library:    &library,
-		player:     &player,
-	}
+	config := repl.InitConfig(configPath, &library, &player)
 
-	tokenOptions := policy.TokenRequestOptions{
-		Scopes: []string{"User.Read", "Files.Read"},
-	}
-
-	source, err := config.NewOneDriveSource(tokenOptions)
+	source, err := sources.InitOneDriveSource(config)
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
 
-	library.sources[source.String()] = source
+	library.Sources[source.String()] = source
 
 	sr := beep.SampleRate(44100)
 	speaker.Init(sr, sr.N(time.Second/10))
 	player.Init()
 
-	repl(&config)
+	repl.Run(&config)
 }

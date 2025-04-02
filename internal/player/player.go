@@ -1,4 +1,4 @@
-package main
+package player
 
 import (
 	"context"
@@ -7,6 +7,7 @@ import (
 
 	"github.com/gopxl/beep"
 	"github.com/gopxl/beep/speaker"
+	"github.com/jthughes/disgo/internal/util"
 )
 
 type Player struct {
@@ -49,7 +50,7 @@ func (p *Player) consumer(ctx context.Context) {
 			}
 			playTrack()
 		case offset := <-p.channelTrackOffset:
-			newPosition, err := clamp(p.PlaylistPosition+offset, 0, len(p.Playlist)-1)
+			newPosition, err := util.Clamp(p.PlaylistPosition+offset, 0, len(p.Playlist)-1)
 			if err != nil {
 				return
 			}

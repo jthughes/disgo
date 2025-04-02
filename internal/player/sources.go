@@ -1,4 +1,4 @@
-package main
+package player
 
 import "io"
 
@@ -15,4 +15,12 @@ type File struct {
 
 func (f File) Get() (io.ReadCloser, error) {
 	return f.source.DownloadFile(f.location)
+}
+
+func NewFile(location, soureName string, source Source) File {
+	return File{
+		location:   location,
+		sourceName: soureName,
+		source:     source,
+	}
 }

@@ -1,4 +1,4 @@
-package main
+package repl
 
 import (
 	"fmt"
@@ -12,6 +12,6 @@ func commandScan(config *Config, args []string) error {
 	}
 
 	path := strings.Join(args, " ")
-	config.library.ImportFromSource(config.library.sources["onedrive"], path)
+	config.library.ImportFromSource(config.library.Sources["onedrive"], path)
 	return nil
 }
