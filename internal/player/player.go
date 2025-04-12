@@ -3,6 +3,7 @@ package player
 import (
 	"context"
 	"fmt"
+	"log"
 	"math/rand/v2"
 
 	"github.com/gopxl/beep"
@@ -19,12 +20,14 @@ type Player struct {
 	channelTrackOffset chan int
 }
 
+// Stops playing when the context is cancelled.
 func (p *Player) consumer(ctx context.Context) {
 	trackDone := make(chan bool)
 	playTrack := func() {
 		stream, err := p.Playlist[p.PlaylistPosition].Stream()
 		if err != nil {
 			fmt.Println("error playing track")
+			log.Printf("Failed to stream track (%s): %v", p.Playlist[p.PlaylistPosition].String(), err)
 			trackDone <- true
 			return
 		}
@@ -52,6 +55,7 @@ func (p *Player) consumer(ctx context.Context) {
 		case offset := <-p.channelTrackOffset:
 			newPosition, err := util.Clamp(p.PlaylistPosition+offset, 0, len(p.Playlist)-1)
 			if err != nil {
+				log.Printf("Error with player offset: Offset=%d, Error=%v\n", offset, err)
 				return
 			}
 			speaker.Lock()
@@ -92,6 +96,10 @@ func (p *Player) Pause() {
 
 func (p *Player) Next() {
 	p.channelTrackOffset <- 1
+}
+
+func (p *Player) JumpTo(offset int) {
+	p.channelTrackOffset <- offset
 }
 
 func (p *Player) Previous() {

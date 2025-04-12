@@ -19,6 +19,7 @@ func commandPlaylist(config *Config, args []string) error {
 				out = " > "
 			}
 		}
+		out += fmt.Sprintf("[%d] ", i)
 		out += track.String()
 		fmt.Println(out)
 	}

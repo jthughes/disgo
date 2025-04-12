@@ -93,6 +93,11 @@ func registerCommands() (commands map[string]cliCommand) {
 		description: "Plays the previous track",
 		callback:    commandPrevious,
 	}
+	commands["goto"] = cliCommand{
+		name:        "goto",
+		description: "Plays the track at the given position in the playlist",
+		callback:    commandGoto,
+	}
 	commands["pause"] = cliCommand{
 		name:        "pause",
 		description: "Pauses the current track",
