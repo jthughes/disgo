@@ -17,6 +17,10 @@ import (
 	"github.com/jthughes/disgo/internal/repl"
 	"github.com/jthughes/disgo/internal/util"
 	_ "modernc.org/sqlite"
+
+	tea "github.com/charmbracelet/bubbletea/v2"
+
+	"github.com/jthughes/disgo/internal/charm"
 )
 
 //go:embed sql/schema/001_tracks.sql
@@ -87,5 +91,10 @@ func main() {
 	speaker.Init(sr, sr.N(time.Second/10))
 	player.Init()
 
-	repl.Run(&config)
+	// repl.Run(&config)
+
+	p := tea.NewProgram(charm.NewModel())
+	if _, err := p.Run(); err != nil {
+		log.Fatal(err)
+	}
 }
