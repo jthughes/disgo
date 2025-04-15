@@ -93,7 +93,7 @@ func main() {
 
 	// repl.Run(&config)
 
-	p := tea.NewProgram(charm.NewModel())
+	p := tea.NewProgram(charm.NewModel(&config))
 	if _, err := p.Run(); err != nil {
 		log.Fatal(err)
 	}
