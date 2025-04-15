@@ -60,23 +60,24 @@ Output demo.gif
 Require echo
 
 Set Shell "bash"
-Set FontSize 32
+Set FontSize 22
 Set Width 1200
-Set Height 600
+Set Height 800
 
 Type "disgo" Sleep 500ms  Enter
 Sleep 1s
-Type "scan /Music/Video Games/Stijn van Wakeren/" Sleep 500ms  Enter
+Down@400ms 3
+Sleep 1s
+Right@400ms 2
+Sleep 1s
+Type "/" Sleep 500ms
+Type "Heartbound" Sleep 500ms Enter
 Sleep 3s
-Type "ls" Sleep 500ms Enter
+Tab@1ms 
 Sleep 1s
-Type "play 0" Sleep 500ms Enter
-Sleep 1s
-Type "?" Sleep 500ms Enter
-Sleep 2s
-Type "next" Sleep 500ms Enter
-Sleep 1s
-Type "playing" Sleep 500ms Enter
-Sleep 2s
-Type "playlist" Sleep 500ms Enter
+Down@200ms 4 Sleep 500ms Enter
+Hide
+Tab 2
+Show
+
 Sleep 5s

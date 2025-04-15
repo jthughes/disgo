@@ -1,6 +1,9 @@
 package playing
 
 import (
+	"fmt"
+	"time"
+
 	tea "github.com/charmbracelet/bubbletea/v2"
 	"github.com/jthughes/disgo/internal/repl"
 )
@@ -77,5 +80,16 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 }
 
 func (m Model) View() string {
-	return m.config.Player.Playlist[m.config.Player.PlaylistPosition].String()
+	track := m.config.Player.Playlist[m.config.Player.PlaylistPosition]
+	trackDuration := time.Duration(track.Metadata.Duration * int(time.Millisecond)).Truncate(time.Second).String()
+	var s string
+	s += "Now Playing\n"
+	s += "\n"
+	s += fmt.Sprintf("%d - %s (%s)\n", track.Metadata.Track, track.Metadata.Title, trackDuration)
+	s += fmt.Sprintf("[%s (%d)]\n", track.Metadata.Album, track.Metadata.Year)
+	s += "\n\n"
+	s += "[n: next] [p: previous] [space: pause/resume]\n"
+	s += "[r: toggle playlist repeat] [tab: view playlist]\n"
+	s += "[esc: return to album list]"
+	return s
 }
