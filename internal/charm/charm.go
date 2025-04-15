@@ -25,10 +25,6 @@ const (
 	playlistView
 )
 
-const (
-	blah int = iota
-)
-
 type model struct {
 	cfg      *repl.Config
 	state    sessionState
@@ -53,6 +49,7 @@ func NewModel(cfg *repl.Config) model {
 		List: list.New(items, list.NewDefaultDelegate(), 0, 0),
 	}
 	albumsModel.List.Title = "Albums"
+	albumsModel.List.DisableQuitKeybindings()
 	return model{
 		cfg:    cfg,
 		state:  albumsView,
@@ -80,47 +77,63 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				case albumsView:
 					{
 						// Get selection
-						// selectedAlbum := m.albums.List.SelectedItem()
+						selectedAlbumIndex := m.albums.List.GlobalIndex()
 
 						// Get album from selection
 						albums, _ := m.cfg.Library.GetAlbums()
-						album := albums[4]
+						album := albums[selectedAlbumIndex]
 						// Add album to playlist
+						if len(m.cfg.Player.Playlist) > 0 {
+							m.cfg.Player.Stop()
+						}
 						m.cfg.Player.AddAlbumToPlaylist(album)
 
 						// Create playlist model
 						m.playlist = newPlaylistModel(m.cfg.Player.Playlist)
+						m.playlist.List.DisableQuitKeybindings()
+
 						msg := tea.WindowSizeMsg{
 							Width:  m.width,
 							Height: m.height,
 						}
 						m.playlist, _ = m.playlist.Update(msg)
 
-						items := m.playlist.List.Items()
-						log.Println(items[0])
 						// Create playing model
-						// m.playing = newPlayingModel()
+						m.playing = playing.New(m.cfg)
 
 						m.cfg.Player.Play()
 
 						// Change to Now Playing
-						m.state = playlistView
+						m.state = playingView
+					}
+				case playlistView:
+					{
+						selectedAlbumIndex := m.playlist.List.GlobalIndex()
+						offset := selectedAlbumIndex - m.cfg.Player.PlaylistPosition
+						m.cfg.Player.JumpTo(offset)
+						m.state = playingView
 					}
 				}
 			}
-			// case "tab":
-			// 	{
-			// 		switch m.state {
-			// 		case playingView:
-			// 			{
-			// 				m.state = playlistView
-			// 			}
-			// 		case playlistView:
-			// 			{
-			// 				m.state = playingView
-			// 			}
-			// 		}
-			// 	}
+		case "esc":
+			if m.state != albumsView {
+				m.state = albumsView
+			}
+		case "tab":
+			{
+				switch m.state {
+				case playingView:
+					{
+						m.state = playlistView
+					}
+				case playlistView:
+					{
+						m.state = playingView
+					}
+				}
+			}
+		case "s":
+			m.cfg.Library.ImportFromSource(m.cfg.Library.Sources["onedrive"], "/Music/")
 		}
 	case tea.WindowSizeMsg:
 		m.width = msg.Width
@@ -169,7 +182,3 @@ func newPlaylistModel(tracks []player.Track) playlist.Model {
 	model.List.Title = "Playlist"
 	return model
 }
-
-// func newPlayingModel() playing.Model {
-
-// }

@@ -111,3 +111,12 @@ func (p *Player) Shuffle() {
 		p.Playlist[i], p.Playlist[j] = p.Playlist[j], p.Playlist[i]
 	})
 }
+
+func (p *Player) Stop() {
+	speaker.Lock()
+	p.Controller.Streamer = nil
+	speaker.Unlock()
+	p.PlaylistCancel()
+	p.Playlist = nil
+	p.PlaylistPosition = -1
+}
